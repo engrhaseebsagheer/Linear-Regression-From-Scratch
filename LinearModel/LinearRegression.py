@@ -125,19 +125,20 @@ class SimpleLinearRegression:
         plt.close()
         print(f"Plot saved as {filename}")
 
-X,y = read_csv("/Users/haseebsagheer/Documents/Python Learning/Linear Regression From Scratch/Dataset/simple_linear_dataset.csv")
+if __name__ == "__main__":
+    X,y = read_csv("/Users/haseebsagheer/Documents/Python Learning/Linear Regression From Scratch/Dataset/simple_linear_dataset.csv")
 
-x_train,y_train, x_val,y_val = data_split(X,y,split=0.9)
-model = SimpleLinearRegression()
-model.fit(x_train,y_train)
-model.predict(x_val)
+    x_train,y_train, x_val,y_val = data_split(X,y,split=0.9)
+    model = SimpleLinearRegression()
+    model.fit(x_train,y_train)
+    model.predict(x_val)
 
 # Evaluate on training set
-model.evaluate(x_train, y_train, "Training Set")
+    model.evaluate(x_train, y_train, "Training Set")
 
 # Evaluate on validation set
-model.evaluate(x_val, y_val, "Validation Set")
-model.visualize(x_val, y_val, "Outputs/regression_plot.png")
+    model.evaluate(x_val, y_val, "Validation Set")
+    model.visualize(x_val, y_val, "Outputs/regression_plot.png")
 
 
 
