@@ -1,5 +1,4 @@
-closed_rows = 50000
-closed_features = 1000
+import matplotlib.pyplot as plt
 def find_y(m,x,b):
     return (m*x)+b
 
@@ -104,7 +103,27 @@ class SimpleLinearRegression:
         print(f"MAPE (%)      : {mape:.2f}")
         print("-" * 40)
 
+    def visualize(self, X, y, filename="regression_plot.png"):
+    # Ensure predictions are available
+        y_pred = self.predict(X)
 
+    # Plot actual data points
+        plt.scatter(X, y, color="blue", label="Actual Data", alpha=0.6)
+
+    # Plot regression line
+        plt.plot(X, y_pred, color="red", label="Regression Line")
+
+    # Add labels and title
+        plt.xlabel("X")
+        plt.ylabel("Y")
+        plt.title("Simple Linear Regression: Actual vs Predicted")
+        plt.legend()
+        plt.grid(True)
+
+    # Save figure
+        plt.savefig(filename, dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"Plot saved as {filename}")
 
 X,y = read_csv("/Users/haseebsagheer/Documents/Python Learning/Linear Regression From Scratch/Dataset/simple_linear_dataset.csv")
 
@@ -118,5 +137,8 @@ model.evaluate(x_train, y_train, "Training Set")
 
 # Evaluate on validation set
 model.evaluate(x_val, y_val, "Validation Set")
+model.visualize(x_val, y_val, "Outputs/regression_plot.png")
+
+
 
 
