@@ -126,7 +126,7 @@ class SimpleLinearRegression:
         print(f"Plot saved as {filename}")
 
 if __name__ == "__main__":
-    X,y = read_csv("/Users/haseebsagheer/Documents/Python Learning/Linear Regression From Scratch/Dataset/simple_linear_dataset.csv")
+    X,y = read_csv("/Users/haseebsagheer/Documents/Python Learning/Linear-Regression-From-Scratch/Dataset/simple_linear_dataset.csv")
 
     x_train,y_train, x_val,y_val = data_split(X,y,split=0.9)
     model = SimpleLinearRegression()
