@@ -6,6 +6,12 @@ from . import LinearRegression
 import joblib
 from fastapi.staticfiles import StaticFiles
 
+# ====== BASE DIR for Production ======
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# ====== Pydantic Models ======
 class AnalyzeDataset(BaseModel):
     file_path: str
     split_amount: float
@@ -17,13 +23,12 @@ class ValidateModel(BaseModel):
     model_path: str
 
 MAX_FILE_SIZE = 1 * 1024 * 1024  # MAX 1MB file size
-UPLOAD_DIR = "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# ====== FastAPI App ======
 app = FastAPI(root_path="/linear")
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
-
+# ====== Upload Endpoint ======
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     try:
@@ -54,7 +59,7 @@ async def upload_file(file: UploadFile = File(...)):
     except Exception as e:
         return {"error": f"File upload failed: {str(e)}"}
 
-
+# ====== Predict Endpoint ======
 @app.post("/predict")
 def get_response(file: AnalyzeDataset):
     try:
@@ -92,7 +97,7 @@ def get_response(file: AnalyzeDataset):
     except Exception as e:
         return {"error": f"Prediction failed: {str(e)}"}
 
-
+# ====== Validate Endpoint ======
 @app.post("/validate")
 def validate_x(data: ValidateModel):
     try:
