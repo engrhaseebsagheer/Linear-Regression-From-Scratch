@@ -1,4 +1,7 @@
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use("Agg")  # Use non-GUI backend for server environments
+
 def find_y(m,x,b):
     return (m*x)+b
 
@@ -13,17 +16,21 @@ def find_slope(x_mean,y_mean,x_data,y_data):
 def find_intercept(m,x_mean,y_mean):
     return(y_mean - (m*x_mean))
 
-def read_csv(file_name):
+def read_csv(file_name,header = True):
     with open(file_name,"r") as file:
         lines = file.readlines()
         x_feature = []
         y_target = []
-        for line in lines[1:]:
+        first_header = int(header)
+        for line in lines[first_header:]:
             x,y = line.split(",")
             x = x.strip()
             y = y.strip()
-            x_feature.append(float(x))
-            y_target.append(float(y))
+            try:
+                x_feature.append(float(x))
+                y_target.append(float(y))
+            except:
+                continue
         return x_feature,y_target
 def predict(m, X, b):
     return [(m * val) + b for val in X]
@@ -47,6 +54,14 @@ class SimpleLinearRegression:
     def predict(self,X):
         self.yp =  [((self.m* x) + self.b) for x in X ]
         return self.yp
+    def validate(self, x):
+    # ✅ Return numeric prediction, not a string
+        return (float(self.m) * float(x)) + float(self.b)
+
+    def equation(self):
+    # ✅ Keep equation for display as a string
+        return f"y = {round(self.m, 2)}x + {round(self.b, 2)}"
+
     def score(self, X, y):
         # If predictions not available, generate them
         if self.yp is None or len(self.yp) != len(X):
@@ -92,16 +107,24 @@ class SimpleLinearRegression:
         rmse = self.rmse(X, y)
         mae = self.mae(X, y)
         mape = self.mape(X, y)
+        return {                        "r_score":round(r2,2),
+                       "mse":round(mse,2),
+                       "rmse":round(rmse,2),
+                       "mae":round(mae,2),
+                       "mape":round(mape,2)
 
 
-        print(f"\nEvaluation on {dataset_name}:")
-        print("-" * 40)
-        print(f"R² Score      : {r2:.2f}")
-        print(f"MSE           : {mse:.2f}")
-        print(f"RMSE          : {rmse:.2f}")
-        print(f"MAE           : {mae:.2f}")
-        print(f"MAPE (%)      : {mape:.2f}")
-        print("-" * 40)
+        }
+
+
+   #     print(f"\nEvaluation on {dataset_name}:")
+#        print("-" * 40)
+ #       print(f"R² Score      : {r2:.2f}")
+  #      print(f"MSE           : {mse:.2f}")
+   #     print(f"RMSE          : {rmse:.2f}")
+    #    print(f"MAE           : {mae:.2f}")
+     #   print(f"MAPE (%)      : {mape:.2f}")
+      #  print("-" * 40)
 
     def visualize(self, X, y, filename="regression_plot.png"):
     # Ensure predictions are available
@@ -126,7 +149,7 @@ class SimpleLinearRegression:
         print(f"Plot saved as {filename}")
 
 if __name__ == "__main__":
-    X,y = read_csv("/Users/haseebsagheer/Documents/Python Learning/Linear-Regression-From-Scratch/Dataset/simple_linear_dataset.csv")
+    X,y = read_csv("/Users/haseebsagheer/Documents/Python Learning/Linear-Regression-From-Scratch/Dataset/simple_linear_dataset.csv",header = False)
 
     x_train,y_train, x_val,y_val = data_split(X,y,split=0.9)
     model = SimpleLinearRegression()
