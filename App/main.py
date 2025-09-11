@@ -1,26 +1,57 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
-import os
-import LinearModel.LinearRegression as LinearRegression
-upload_directory = "uploads"
-os.makedirs(upload_directory,exist_ok=True)
+from fastapi import FastAPI, File, UploadFile
+import pandas as pd
+import re, time, os
 
+MAX_FILE_SIZE = 1 * 1024 * 1024  # MAX 1MB file size
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-app = FastAPI()
+app = FastAPI(root_path="/linear")
+
 @app.post("/upload")
-async def upload_file(file:UploadFile = File(...)):
-    ext = os.path.splitext(file.filename)[1].lower()
-    allowed_exts = [".csv", ".xls", ".xlsx"]
-    if ext not in allowed_exts:
-        raise HTTPException(status_code=400, detail="Only CSV or Excel files allowed")
+async def upload_file(file: UploadFile = File(...)):
+    # ==================
+    # Checking File Size
+    # ==================
+    contents = await file.read()
+    if len(contents) > MAX_FILE_SIZE:
+        return {"message": "Maximum 1MB file size is allowed!"}
+
+    # Check file extension
+    if not file.filename.lower().endswith(".csv"):
+        return {"message": "Only .csv files are allowed to upload!"}
     
+    # Read CSV from contents, not file.file
+    try:
+        from io import StringIO
+        df = pd.read_csv(StringIO(contents.decode("utf-8")))
+    except:
+        return {"message": "Invalid .csv file!"}
+    
+    # Check columns count
+    if len(df.columns) != 2:
+        return {"message": "Upload .csv with only 1 feature and 1 target!"}
 
-    file_path = f"uploads/{file.filename}"
+    # Check numeric values
+    try:
+        df = df.astype(float)
+    except:
+        return {"message": "Your dataset contains non-numerical values!"}
+
+    # Generate unique safe filename
+    clean_name = re.sub(r'[^a-zA-Z0-9_.-]', '_', file.filename.lower())
+    unique_name = f"{int(time.time())}_{clean_name}"
+    file_path = os.path.join(UPLOAD_DIR, unique_name)
+
+    # Save the file
     with open(file_path, "wb") as myfile:
-        myfile.write(await file.read())
-    return {"message": "File uploaded successfully", "file": file.filename}
+        myfile.write(contents)
 
+    return {
+        "message": "CSV uploaded successfully!",
+        "file_path": file_path
+    }
 
-
-@app.get("/")
-def home():
-    return {"message":"Hello World!"}
+@app.get("/predict")
+def get_response():
+    return "Analyzing dataset..."
