@@ -26,7 +26,15 @@ MAX_FILE_SIZE = 1 * 1024 * 1024  # MAX 1MB file size
 
 # ====== FastAPI App ======
 app = FastAPI(root_path="/linear")
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+app.mount(
+    "/uploads",  # URL path
+    StaticFiles(directory=UPLOAD_DIR),  # real folder
+    name="linear-uploads"
+)
+
+# Helper function to create public URL
+def get_public_url(filename: str):
+    return f"/linear/uploads/{filename}"
 
 # ====== Upload Endpoint ======
 @app.post("/upload")
@@ -54,7 +62,8 @@ async def upload_file(file: UploadFile = File(...)):
         with open(file_path, "wb") as myfile:
             myfile.write(contents)
 
-        return {"message": "CSV uploaded successfully!", "file_path": file_path}
+        # Return public URL instead of disk path
+        return {"message": "CSV uploaded successfully!", "file_path": get_public_url(unique_name)}
 
     except Exception as e:
         return {"error": f"File upload failed: {str(e)}"}
@@ -68,10 +77,14 @@ def get_response(file: AnalyzeDataset):
         first_row_header = file.first_row_header
         visualize = file.visualization
 
-        if not os.path.exists(file_path):
+        # Convert public URL back to real path for processing
+        filename = file_path.split("/")[-1]
+        real_path = os.path.join(UPLOAD_DIR, filename)
+
+        if not os.path.exists(real_path):
             return {"error": "File not found!"}
 
-        x, y = LinearRegression.read_csv(file_path, first_row_header)
+        x, y = LinearRegression.read_csv(real_path, first_row_header)
         x_train, y_train, x_val, y_val = LinearRegression.data_split(x, y, split_amount)
 
         model = LinearRegression.SimpleLinearRegression()
@@ -79,7 +92,7 @@ def get_response(file: AnalyzeDataset):
         model.predict(x_val)
         metrics = model.evaluate(x_val, y_val, "Validation Set")
 
-        png_path = file_path.removesuffix(".csv") + ".png"
+        png_path = real_path.removesuffix(".csv") + ".png"
         if visualize:
             model.visualize(x_val, y_val, png_path)
 
@@ -87,11 +100,12 @@ def get_response(file: AnalyzeDataset):
         equation = model.equation()
         joblib.dump(model, model_path)
 
+        # Return public URLs instead of disk paths
         return {
             "equation": equation,
             "metrics": metrics,
-            "file_path": png_path,
-            "model_path": model_path
+            "file_path": get_public_url(os.path.basename(png_path)),
+            "model_path": get_public_url(os.path.basename(model_path))
         }
 
     except Exception as e:
@@ -102,12 +116,15 @@ def get_response(file: AnalyzeDataset):
 def validate_x(data: ValidateModel):
     try:
         x_value = float(data.x_value)
-        model_path = data.model_path
 
-        if not os.path.exists(model_path):
+        # Convert public URL back to real path
+        filename = data.model_path.split("/")[-1]
+        model_real_path = os.path.join(UPLOAD_DIR, filename)
+
+        if not os.path.exists(model_real_path):
             return {"error": "Model file not found!"}
 
-        loaded_model = joblib.load(model_path)
+        loaded_model = joblib.load(model_real_path)
         y = round(loaded_model.validate(x_value), 2)
 
         return {"message": "Successfully predicted!", "y": y}
